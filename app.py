@@ -22,11 +22,19 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     .step-box {
-        background-color: #f0f2f6;
-        padding: 15px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 18px;
         border-radius: 10px;
-        margin: 10px 0;
-        border-left: 5px solid #1f77b4;
+        margin: 12px 0;
+        border-left: 5px solid #ffd700;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
+        font-size: 1.05rem;
+    }
+    .step-box strong {
+        font-size: 1.15rem;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        color: #fff;
     }
     .info-box {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -42,11 +50,17 @@ st.markdown("""
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     }
     .success-box {
-        background-color: #d4edda;
-        padding: 15px;
-        border-radius: 5px;
-        margin: 10px 0;
-        border-left: 5px solid #28a745;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 15px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #ffd700;
+    }
+    .success-box strong {
+        font-size: 1.2rem;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
     .error-box {
         background-color: #f8d7da;
@@ -224,27 +238,44 @@ except Exception as e:
     st.stop()
 
 # Example procedures
-with st.expander("📖 View Example Procedures"):
-    example1 = """To a solution of 2-bromopyridine (1.0 g, 6.33 mmol) in THF (20 mL) 
-    at -78°C was added n-BuLi (2.5 M in hexanes, 2.78 mL, 6.96 mmol) dropwise. 
-    The mixture was stirred for 30 min at -78°C, then DMF (0.74 mL, 9.5 mmol) was added. 
-    The reaction was warmed to room temperature and stirred for 2 h. The mixture was 
-    quenched with saturated NH4Cl solution and extracted with EtOAc (3 x 20 mL). 
-    The combined organic layers were dried over Na2SO4, filtered, and concentrated 
-    under reduced pressure to give the crude product."""
+with st.expander("📖 View Example Procedures", expanded=True):
+    st.markdown("""
+    **Example 1: Organolithium Synthesis**
     
-    example2 = """A mixture of benzaldehyde (10.6 g, 100 mmol) and acetone (7.3 mL, 100 mmol) 
-    in ethanol (50 mL) was treated with 10% NaOH solution (10 mL). The mixture was stirred 
-    at room temperature for 3 hours. The precipitate was collected by filtration, washed 
-    with cold ethanol, and dried to afford the product as a yellow solid (12.5 g, 85% yield)."""
+    Classic organometallic reaction demonstrating low-temperature lithiation and electrophilic quench.
+    """)
     
-    col1, col2 = st.columns(2)
+    example1 = """To a solution of 2-bromopyridine (1.0 g, 6.33 mmol) in THF (20 mL) at -78°C was added n-BuLi (2.5 M in hexanes, 2.78 mL, 6.96 mmol) dropwise. The mixture was stirred for 30 min at -78°C, then DMF (0.74 mL, 9.5 mmol) was added. The reaction was warmed to room temperature and stirred for 2 h. The mixture was quenched with saturated NH4Cl solution and extracted with EtOAc (3 x 20 mL). The combined organic layers were dried over Na2SO4, filtered, and concentrated under reduced pressure to give the crude product."""
+    
+    st.markdown("""
+    **Example 2: Aldol Condensation**
+    
+    Base-catalyzed condensation reaction between benzaldehyde and acetone.
+    """)
+    
+    example2 = """A mixture of benzaldehyde (10.6 g, 100 mmol) and acetone (7.3 mL, 100 mmol) in ethanol (50 mL) was treated with 10% NaOH solution (10 mL). The mixture was stirred at room temperature for 3 hours. The precipitate was collected by filtration, washed with cold ethanol, and dried to afford the product as a yellow solid (12.5 g, 85% yield)."""
+    
+    st.markdown("""
+    **Example 3: IBM RXN Model Description**
+    
+    Understanding how the AI processes chemical procedures.
+    """)
+    
+    example3 = """The IBM RXN for Chemistry tool uses a sophisticated deep-learning model, often described as a Transformer-based sequence-to-sequence architecture, to effectively translate a free-form, natural language experimental procedure into a structured, machine-readable protocol. For instance, a sentence like, "The mixture was stirred for 30 minutes at 25°C, then the pH was adjusted to 9 by addition of 6M NaOH," is converted into a distinct sequence of action steps: STIR for 30 minutes at 25°C, followed by PH with 6M NaOH to pH 9. This process extracts all relevant chemical entities, quantities, conditions, and operations, standardizing the information into a format that is not only easily analyzable but also directly executable by robotic chemical synthesis platforms like RoboRXN, thereby accelerating the work of chemists."""
+    
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("Load Example 1", use_container_width=True):
             st.session_state.example_text = example1
+            st.rerun()
     with col2:
         if st.button("Load Example 2", use_container_width=True):
             st.session_state.example_text = example2
+            st.rerun()
+    with col3:
+        if st.button("Load Example 3", use_container_width=True):
+            st.session_state.example_text = example3
+            st.rerun()
 
 # Text input area
 input_text = st.text_area(
@@ -294,8 +325,22 @@ if extract_button:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Display extracted steps
                     st.subheader("📋 Extracted Protocol Steps:")
+    st.markdown("""
+    <style>
+    .protocol-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0 15px 0;
+        font-size: 1.3rem;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+    </style>
+    <div class="protocol-header">📋 Extracted Protocol Steps:</div>
+    """, unsafe_allow_html=True)
                     
                     for i, action in enumerate(actions, 1):
                         st.markdown(f"""
