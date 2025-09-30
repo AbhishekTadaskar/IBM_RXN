@@ -2,6 +2,7 @@ import streamlit as st
 from rxn4chemistry import RXN4ChemistryWrapper
 import json
 from datetime import datetime
+import os
 
 # Page configuration
 st.set_page_config(
@@ -28,10 +29,17 @@ st.markdown("""
         border-left: 5px solid #1f77b4;
     }
     .info-box {
-        background-color: #e7f3ff;
-        padding: 15px;
-        border-radius: 5px;
-        margin: 10px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 15px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #ffd700;
+    }
+    .info-box strong {
+        font-size: 1.1rem;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     }
     .success-box {
         background-color: #d4edda;
@@ -39,6 +47,13 @@ st.markdown("""
         border-radius: 5px;
         margin: 10px 0;
         border-left: 5px solid #28a745;
+    }
+    .error-box {
+        background-color: #f8d7da;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        border-left: 5px solid #dc3545;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -48,6 +63,41 @@ if 'extraction_history' not in st.session_state:
     st.session_state.extraction_history = []
 if 'api_initialized' not in st.session_state:
     st.session_state.api_initialized = False
+if 'api_key' not in st.session_state:
+    st.session_state.api_key = None
+
+# Function to load API key with multiple fallback methods
+def load_api_key():
+    """Try multiple methods to load the API key"""
+    
+    # Method 1: Try Streamlit secrets (for deployment)
+    try:
+        if "ibm_rxn_api_key" in st.secrets:
+            return st.secrets["ibm_rxn_api_key"]
+    except Exception:
+        pass
+    
+    # Method 2: Try environment variable
+    api_key = os.environ.get("IBM_RXN_API_KEY")
+    if api_key:
+        return api_key
+    
+    # Method 3: Try reading from secrets.toml directly
+    try:
+        secrets_path = os.path.join(os.path.dirname(__file__), ".streamlit", "secrets.toml")
+        if os.path.exists(secrets_path):
+            with open(secrets_path, 'r') as f:
+                content = f.read()
+                # Simple parsing of TOML format
+                for line in content.split('\n'):
+                    if 'ibm_rxn_api_key' in line and '=' in line:
+                        key = line.split('=')[1].strip().strip('"').strip("'")
+                        if key:
+                            return key
+    except Exception:
+        pass
+    
+    return None
 
 # Sidebar
 with st.sidebar:
@@ -63,9 +113,10 @@ with st.sidebar:
     - 📊 History tracking
     
     ### How to use:
-    1. Paste your reaction procedure
-    2. Click "Extract Protocol Steps"
-    3. Review the structured output
+    1. Enter your API key (if not configured)
+    2. Paste your reaction procedure
+    3. Click "Extract Protocol Steps"
+    4. Review the structured output
     """)
     
     st.divider()
@@ -78,9 +129,68 @@ with st.sidebar:
         if st.button("Clear History", type="secondary"):
             st.session_state.extraction_history = []
             st.rerun()
+    
+    st.divider()
+    
+    # API Key Configuration in Sidebar
+    st.header("🔑 API Configuration")
+    
+    # Check if API key is already loaded
+    if not st.session_state.api_key:
+        st.session_state.api_key = load_api_key()
+    
+    if st.session_state.api_key:
+        st.success("✅ API Key loaded successfully!")
+        masked_key = st.session_state.api_key[:10] + "..." + st.session_state.api_key[-10:]
+        st.text(f"Key: {masked_key}")
+        
+        if st.button("Change API Key"):
+            st.session_state.api_key = None
+            st.session_state.api_initialized = False
+            st.rerun()
+    else:
+        st.warning("⚠️ API Key not found")
+        
+        with st.expander("📖 How to setup API Key"):
+            st.markdown("""
+            **Method 1: Create secrets.toml file**
+            1. Create folder: `.streamlit` in your project
+            2. Create file: `secrets.toml` inside `.streamlit`
+            3. Add: `ibm_rxn_api_key = "your-key-here"`
+            
+            **Method 2: Set environment variable**
+            ```
+            set IBM_RXN_API_KEY=your-key-here
+            ```
+            
+            **Method 3: Enter manually below**
+            """)
+        
+        # Manual API key input
+        manual_key = st.text_input(
+            "Enter API Key manually:",
+            type="password",
+            help="Your IBM RXN API key"
+        )
+        
+        if st.button("Save API Key") and manual_key:
+            st.session_state.api_key = manual_key
+            st.session_state.api_initialized = False
+            st.success("✅ API Key saved for this session!")
+            st.rerun()
 
 # Main content
 st.markdown('<h1 class="main-header">🧪 IBM RXN Chemistry Protocol Extractor</h1>', unsafe_allow_html=True)
+
+# Check if API key is available
+if not st.session_state.api_key:
+    st.markdown("""
+    <div class="error-box">
+        <strong>❌ API Key Required</strong><br>
+        Please configure your IBM RXN API key in the sidebar to use this application.
+    </div>
+    """, unsafe_allow_html=True)
+    st.stop()
 
 st.markdown("""
 <div class="info-box">
@@ -93,15 +203,24 @@ st.markdown("""
 # Initialize API wrapper with error handling
 try:
     if not st.session_state.api_initialized:
-        API_KEY = st.secrets["ibm_rxn_api_key"]
-        rxn_wrapper = RXN4ChemistryWrapper(api_key=API_KEY)
-        st.session_state.rxn_wrapper = rxn_wrapper
-        st.session_state.api_initialized = True
+        with st.spinner("🔄 Initializing IBM RXN API..."):
+            rxn_wrapper = RXN4ChemistryWrapper(api_key=st.session_state.api_key)
+            st.session_state.rxn_wrapper = rxn_wrapper
+            st.session_state.api_initialized = True
     else:
         rxn_wrapper = st.session_state.rxn_wrapper
 except Exception as e:
-    st.error(f"❌ Failed to initialize IBM RXN API: {e}")
-    st.info("Please check your API key in the Streamlit secrets configuration.")
+    st.markdown(f"""
+    <div class="error-box">
+        <strong>❌ Failed to initialize IBM RXN API:</strong><br>
+        {str(e)}
+    </div>
+    """, unsafe_allow_html=True)
+    st.info("💡 Please check your API key is valid and try again.")
+    if st.button("Reset API Configuration"):
+        st.session_state.api_key = None
+        st.session_state.api_initialized = False
+        st.rerun()
     st.stop()
 
 # Example procedures
@@ -121,10 +240,10 @@ with st.expander("📖 View Example Procedures"):
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("Load Example 1"):
+        if st.button("Load Example 1", use_container_width=True):
             st.session_state.example_text = example1
     with col2:
-        if st.button("Load Example 2"):
+        if st.button("Load Example 2", use_container_width=True):
             st.session_state.example_text = example2
 
 # Text input area
@@ -146,11 +265,6 @@ with col1:
     extract_button = st.button("🔬 Extract Protocol Steps", type="primary", use_container_width=True)
 with col2:
     clear_button = st.button("🗑️ Clear", use_container_width=True)
-with col3:
-    if st.session_state.get('last_result'):
-        download_enabled = True
-    else:
-        download_enabled = False
 
 if clear_button:
     st.session_state.example_text = ''
@@ -215,7 +329,8 @@ if extract_button:
                             label="📥 Download JSON",
                             data=json_data,
                             file_name="protocol_steps.json",
-                            mime="application/json"
+                            mime="application/json",
+                            use_container_width=True
                         )
                     
                     with col2:
@@ -225,7 +340,8 @@ if extract_button:
                             label="📥 Download TXT",
                             data=txt_data,
                             file_name="protocol_steps.txt",
-                            mime="text/plain"
+                            mime="text/plain",
+                            use_container_width=True
                         )
                     
                     with col3:
@@ -235,15 +351,27 @@ if extract_button:
                             label="📥 Download MD",
                             data=md_data,
                             file_name="protocol_steps.md",
-                            mime="text/markdown"
+                            mime="text/markdown",
+                            use_container_width=True
                         )
                 
                 else:
                     st.info("ℹ️ No protocol steps extracted. Please verify the input format and try again.")
                     
             except Exception as e:
-                st.error(f"❌ Error calling IBM RXN API: {str(e)}")
-                st.info("💡 **Troubleshooting tips:**\n- Check your API key is valid\n- Verify your internet connection\n- Ensure the input text is a valid chemical procedure")
+                st.markdown(f"""
+                <div class="error-box">
+                    <strong>❌ Error calling IBM RXN API:</strong><br>
+                    {str(e)}
+                </div>
+                """, unsafe_allow_html=True)
+                st.info("""
+                💡 **Troubleshooting tips:**
+                - Check your API key is valid and active
+                - Verify your internet connection
+                - Ensure the input text is a valid chemical procedure
+                - Try with one of the example procedures first
+                """)
 
 # Display extraction history
 if enable_history and st.session_state.extraction_history:
