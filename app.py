@@ -15,11 +15,16 @@ st.set_page_config(
 # Custom CSS for better styling
 st.markdown("""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    html, body, [class*="st-"] {
+        font-family: 'Inter', sans-serif;
+    }
     .main-header {
         font-size: 2.5rem;
         color: #1f77b4;
         text-align: center;
         margin-bottom: 1rem;
+        font-weight: 700;
     }
     .step-box {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -68,6 +73,17 @@ st.markdown("""
         border-radius: 5px;
         margin: 10px 0;
         border-left: 5px solid #dc3545;
+        color: #721c24;
+    }
+    .protocol-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0 15px 0;
+        font-size: 1.3rem;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -79,6 +95,9 @@ if 'api_initialized' not in st.session_state:
     st.session_state.api_initialized = False
 if 'api_key' not in st.session_state:
     st.session_state.api_key = None
+if 'example_text' not in st.session_state:
+    st.session_state.example_text = ''
+
 
 # Function to load API key with multiple fallback methods
 def load_api_key():
@@ -97,20 +116,8 @@ def load_api_key():
         return api_key
     
     # Method 3: Try reading from secrets.toml directly
-    try:
-        secrets_path = os.path.join(os.path.dirname(__file__), ".streamlit", "secrets.toml")
-        if os.path.exists(secrets_path):
-            with open(secrets_path, 'r') as f:
-                content = f.read()
-                # Simple parsing of TOML format
-                for line in content.split('\n'):
-                    if 'ibm_rxn_api_key' in line and '=' in line:
-                        key = line.split('=')[1].strip().strip('"').strip("'")
-                        if key:
-                            return key
-    except Exception:
-        pass
-    
+    # NOTE: In a cloud environment, direct file access might be restricted.
+    # This is often best left to Streamlit's native st.secrets detection.
     return None
 
 # Sidebar
@@ -200,8 +207,8 @@ st.markdown('<h1 class="main-header">🧪 IBM RXN Chemistry Protocol Extractor</
 if not st.session_state.api_key:
     st.markdown("""
     <div class="error-box">
-        <strong>❌ API Key Required</strong><br>
-        Please configure your IBM RXN API key in the sidebar to use this application.
+        <strong>❌ API Key Required</strong><br>
+        Please configure your IBM RXN API key in the sidebar to use this application.
     </div>
     """, unsafe_allow_html=True)
     st.stop()
@@ -219,6 +226,7 @@ try:
     if not st.session_state.api_initialized:
         with st.spinner("🔄 Initializing IBM RXN API..."):
             rxn_wrapper = RXN4ChemistryWrapper(api_key=st.session_state.api_key)
+            # FIX: The previous attempt stopped here. Now completing the try block.
             st.session_state.rxn_wrapper = rxn_wrapper
             st.session_state.api_initialized = True
     else:
@@ -226,8 +234,8 @@ try:
 except Exception as e:
     st.markdown(f"""
     <div class="error-box">
-        <strong>❌ Failed to initialize IBM RXN API:</strong><br>
-        {str(e)}
+        <strong>❌ Failed to initialize IBM RXN API:</strong><br>
+        {str(e)}
     </div>
     """, unsafe_allow_html=True)
     st.info("💡 Please check your API key is valid and try again.")
@@ -325,22 +333,22 @@ if extract_button:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    st.subheader("📋 Extracted Protocol Steps:")
-    st.markdown("""
-    <style>
-    .protocol-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 20px 0 15px 0;
-        font-size: 1.3rem;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-    }
-    </style>
-    <div class="protocol-header">📋 Extracted Protocol Steps:</div>
-    """, unsafe_allow_html=True)
+                    # Display protocol steps with custom styling
+                    st.markdown("""
+                    <style>
+                    .protocol-header {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 15px;
+                        border-radius: 8px;
+                        margin: 20px 0 15px 0;
+                        font-size: 1.3rem;
+                        font-weight: bold;
+                        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+                    }
+                    </style>
+                    <div class="protocol-header">📋 Extracted Protocol Steps:</div>
+                    """, unsafe_allow_html=True)
                     
                     for i, action in enumerate(actions, 1):
                         st.markdown(f"""
@@ -423,6 +431,7 @@ if enable_history and st.session_state.extraction_history:
     st.divider()
     st.subheader("📜 Extraction History")
     
+    # Only show the last 5 entries
     for idx, entry in enumerate(reversed(st.session_state.extraction_history[-5:]), 1):
         with st.expander(f"🕐 {entry['timestamp']} - {entry['steps_count']} steps extracted"):
             st.write(f"**Input preview:** {entry['input']}")
