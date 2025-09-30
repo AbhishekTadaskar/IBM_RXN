@@ -26,20 +26,20 @@ st.markdown("""
         margin-bottom: 1rem;
         font-weight: 700;
     }
+    /* IMPROVED VISIBILITY STYLES */
     .step-box {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
+        background-color: #e8f5e9; /* Light green tint for high visibility */
+        color: #1b5e20; /* Dark green text */
         padding: 18px;
         border-radius: 10px;
         margin: 12px 0;
-        border-left: 5px solid #ffd700;
-        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
+        border-left: 6px solid #4caf50; /* Green highlight */
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         font-size: 1.05rem;
     }
     .step-box strong {
+        color: #1b5e20;
         font-size: 1.15rem;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-        color: #fff;
     }
     .info-box {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -55,17 +55,16 @@ st.markdown("""
         text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     }
     .success-box {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 15px 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-left: 5px solid #ffd700;
+        background: linear-gradient(90deg, #d4edda 0%, #aed581 100%); /* Vibrant Green gradient */
+        color: #155724; /* Darker text for contrast */
+        padding: 18px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 6px solid #28a745;
+        box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
     }
     .success-box strong {
         font-size: 1.2rem;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
     .error-box {
         background-color: #f8d7da;
@@ -74,16 +73,6 @@ st.markdown("""
         margin: 10px 0;
         border-left: 5px solid #dc3545;
         color: #721c24;
-    }
-    .protocol-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 15px;
-        border-radius: 8px;
-        margin: 20px 0 15px 0;
-        font-size: 1.3rem;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -115,9 +104,7 @@ def load_api_key():
     if api_key:
         return api_key
     
-    # Method 3: Try reading from secrets.toml directly
-    # NOTE: In a cloud environment, direct file access might be restricted.
-    # This is often best left to Streamlit's native st.secrets detection.
+    # Method 3: Try reading from secrets.toml directly (for local development)
     return None
 
 # Sidebar
@@ -207,8 +194,8 @@ st.markdown('<h1 class="main-header">🧪 IBM RXN Chemistry Protocol Extractor</
 if not st.session_state.api_key:
     st.markdown("""
     <div class="error-box">
-        <strong>❌ API Key Required</strong><br>
-        Please configure your IBM RXN API key in the sidebar to use this application.
+        <strong>❌ API Key Required</strong><br>
+        Please configure your IBM RXN API key in the sidebar to use this application.
     </div>
     """, unsafe_allow_html=True)
     st.stop()
@@ -226,7 +213,6 @@ try:
     if not st.session_state.api_initialized:
         with st.spinner("🔄 Initializing IBM RXN API..."):
             rxn_wrapper = RXN4ChemistryWrapper(api_key=st.session_state.api_key)
-            # FIX: The previous attempt stopped here. Now completing the try block.
             st.session_state.rxn_wrapper = rxn_wrapper
             st.session_state.api_initialized = True
     else:
@@ -234,8 +220,8 @@ try:
 except Exception as e:
     st.markdown(f"""
     <div class="error-box">
-        <strong>❌ Failed to initialize IBM RXN API:</strong><br>
-        {str(e)}
+        <strong>❌ Failed to initialize IBM RXN API:</strong><br>
+        {str(e)}
     </div>
     """, unsafe_allow_html=True)
     st.info("💡 Please check your API key is valid and try again.")
@@ -248,42 +234,40 @@ except Exception as e:
 # Example procedures
 with st.expander("📖 View Example Procedures", expanded=True):
     st.markdown("""
-    **Example 1: Organolithium Synthesis**
-    
-    Classic organometallic reaction demonstrating low-temperature lithiation and electrophilic quench.
+    **Example 1: Organolithium Synthesis** (Lithiation followed by quench)
     """)
     
-    example1 = """To a solution of 2-bromopyridine (1.0 g, 6.33 mmol) in THF (20 mL) at -78°C was added n-BuLi (2.5 M in hexanes, 2.78 mL, 6.96 mmol) dropwise. The mixture was stirred for 30 min at -78°C, then DMF (0.74 mL, 9.5 mmol) was added. The reaction was warmed to room temperature and stirred for 2 h. The mixture was quenched with saturated NH4Cl solution and extracted with EtOAc (3 x 20 mL). The combined organic layers were dried over Na2SO4, filtered, and concentrated under reduced pressure to give the crude product."""
+    # Using LaTeX for chemical formulas
+    example1 = """To a solution of 2-bromopyridine ($1.0\ g$, $6.33\ mmol$) in THF ($20\ mL$) at $-78^{\circ}C$ was added $n-BuLi$ ($2.5\ M$ in hexanes, $2.78\ mL$, $6.96\ mmol$) dropwise. The mixture was stirred for $30\ min$ at $-78^{\circ}C$, then DMF ($0.74\ mL$, $9.5\ mmol$) was added. The reaction was warmed to room temperature and stirred for $2\ h$. The mixture was quenched with saturated $NH_{4}Cl$ solution and extracted with EtOAc ($3\ x\ 20\ mL$). The combined organic layers were dried over $Na_{2}SO_{4}$, filtered, and concentrated under reduced pressure to give the crude product."""
     
     st.markdown("""
-    **Example 2: Aldol Condensation**
-    
-    Base-catalyzed condensation reaction between benzaldehyde and acetone.
+    **Example 2: Aldol Condensation** (Base-catalyzed C-C bond formation)
     """)
     
-    example2 = """A mixture of benzaldehyde (10.6 g, 100 mmol) and acetone (7.3 mL, 100 mmol) in ethanol (50 mL) was treated with 10% NaOH solution (10 mL). The mixture was stirred at room temperature for 3 hours. The precipitate was collected by filtration, washed with cold ethanol, and dried to afford the product as a yellow solid (12.5 g, 85% yield)."""
-    
+    example2 = """A mixture of benzaldehyde ($10.6\ g$, $100\ mmol$) and acetone ($7.3\ mL$, $100\ mmol$) in ethanol ($50\ mL$) was treated with $10\%\ NaOH$ solution ($10\ mL$). The mixture was stirred at room temperature for $3\ hours$. The precipitate was collected by filtration, washed with cold ethanol, and dried to afford the product as a yellow solid ($12.5\ g$, $85\%\ yield$)."""
+
     st.markdown("""
-    **Example 3: IBM RXN Model Description**
-    
-    Understanding how the AI processes chemical procedures.
+    **Example 3: Model Description** (Text describing the AI's function)
     """)
     
-    example3 = """The IBM RXN for Chemistry tool uses a sophisticated deep-learning model, often described as a Transformer-based sequence-to-sequence architecture, to effectively translate a free-form, natural language experimental procedure into a structured, machine-readable protocol. For instance, a sentence like, "The mixture was stirred for 30 minutes at 25°C, then the pH was adjusted to 9 by addition of 6M NaOH," is converted into a distinct sequence of action steps: STIR for 30 minutes at 25°C, followed by PH with 6M NaOH to pH 9. This process extracts all relevant chemical entities, quantities, conditions, and operations, standardizing the information into a format that is not only easily analyzable but also directly executable by robotic chemical synthesis platforms like RoboRXN, thereby accelerating the work of chemists."""
+    # Restored third example with LaTeX for temperature/concentration
+    example3 = """The IBM RXN for Chemistry tool uses a sophisticated deep-learning model, often described as a Transformer-based sequence-to-sequence architecture, to effectively "translate" a free-form, natural language experimental procedure into a structured, machine-readable protocol. For instance, a sentence like, "The mixture was stirred for 30 minutes at $25^{\circ}C$, then the $pH$ was adjusted to $9$ by addition of $6M\ NaOH$," is converted into a distinct sequence of action steps: STIR for 30 minutes at $25^{\circ}C$, followed by PH with $6M\ NaOH$ to $pH\ 9$. This process extracts all relevant chemical entities, quantities, conditions, and operations, standardizing the information into a format that is not only easily analyzable but also directly executable by robotic chemical synthesis platforms like RoboRXN, thereby accelerating the work of chemists."""
+
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        if st.button("Load Example 1", use_container_width=True):
+        if st.button("Load Example 1", use_container_width=True, key="load1"):
             st.session_state.example_text = example1
             st.rerun()
     with col2:
-        if st.button("Load Example 2", use_container_width=True):
+        if st.button("Load Example 2", use_container_width=True, key="load2"):
             st.session_state.example_text = example2
             st.rerun()
     with col3:
-        if st.button("Load Example 3", use_container_width=True):
+        if st.button("Load Example 3", use_container_width=True, key="load3"):
             st.session_state.example_text = example3
             st.rerun()
+
 
 # Text input area
 input_text = st.text_area(
@@ -307,6 +291,8 @@ with col2:
 
 if clear_button:
     st.session_state.example_text = ''
+    if 'last_result' in st.session_state:
+        del st.session_state.last_result
     st.rerun()
 
 # Main extraction logic
@@ -333,22 +319,8 @@ if extract_button:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # Display protocol steps with custom styling
-                    st.markdown("""
-                    <style>
-                    .protocol-header {
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 15px;
-                        border-radius: 8px;
-                        margin: 20px 0 15px 0;
-                        font-size: 1.3rem;
-                        font-weight: bold;
-                        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-                    }
-                    </style>
-                    <div class="protocol-header">📋 Extracted Protocol Steps:</div>
-                    """, unsafe_allow_html=True)
+                    # Display extracted steps
+                    st.subheader("📋 Extracted Protocol Steps:")
                     
                     for i, action in enumerate(actions, 1):
                         st.markdown(f"""
@@ -373,9 +345,9 @@ if extract_button:
                     
                     # Download options
                     st.subheader("💾 Download Results:")
-                    col1, col2, col3 = st.columns(3)
+                    col1_dl, col2_dl, col3_dl = st.columns(3)
                     
-                    with col1:
+                    with col1_dl:
                         # Download as JSON
                         json_data = json.dumps(result, indent=2)
                         st.download_button(
@@ -386,7 +358,7 @@ if extract_button:
                             use_container_width=True
                         )
                     
-                    with col2:
+                    with col2_dl:
                         # Download as TXT
                         txt_data = "\n\n".join([f"Step {i}: {action}" for i, action in enumerate(actions, 1)])
                         st.download_button(
@@ -397,7 +369,7 @@ if extract_button:
                             use_container_width=True
                         )
                     
-                    with col3:
+                    with col3_dl:
                         # Download as Markdown
                         md_data = "# Extracted Protocol Steps\n\n" + "\n\n".join([f"**Step {i}:** {action}" for i, action in enumerate(actions, 1)])
                         st.download_button(
@@ -431,7 +403,7 @@ if enable_history and st.session_state.extraction_history:
     st.divider()
     st.subheader("📜 Extraction History")
     
-    # Only show the last 5 entries
+    # Show last 5 entries
     for idx, entry in enumerate(reversed(st.session_state.extraction_history[-5:]), 1):
         with st.expander(f"🕐 {entry['timestamp']} - {entry['steps_count']} steps extracted"):
             st.write(f"**Input preview:** {entry['input']}")
